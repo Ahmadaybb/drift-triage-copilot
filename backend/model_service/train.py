@@ -13,9 +13,8 @@ and registers the fitted pipeline in MLflow.
 Usage:
     python backend/model_service/train.py
 """
-
-import hashlib
 import json
+import hashlib
 import platform
 import warnings
 from datetime import datetime, timezone
@@ -195,7 +194,36 @@ def main():
     print(f"      (rule: highest threshold where recall >= 0.75 on val set)")
 
     print("\n      --- Operating threshold on test set ---")
-    final_m = evaluate("test", pipeline, X_test, y_test, threshold=OPERATING_THRESHOLD)
+    final_m = evaluate("test", pipeline, X_test, y_test, threshold=OPERATING_THRESHOLD)# Save reference statistics for drift detection
+
+
+    reference_stats = {
+        "numeric": {
+            col: {
+                "mean": float(X_train[col].mean()),
+                "std":  float(X_train[col].std()),
+                "min":  float(X_train[col].min()),
+                "max":  float(X_train[col].max()),
+            }
+            for col in numeric_cols
+        },
+        "categorical": {
+            col: X_train[col].value_counts(normalize=True).to_dict()
+            for col in cat_cols
+        },
+        "output": {
+            "positive_rate": float(y_train.mean())
+        }
+    }
+
+    ref_path = ARTIFACTS_DIR / "reference_stats.json"
+    with open(ref_path, "w") as f:
+        json.dump(reference_stats, f, indent=2)
+
+    print(f"Reference stats saved to: {ref_path}")
+    
+
+    
 
     # ── 7) Save artifacts ─────────────────────────────────────────────────────
     print("\n[7/8] Saving artifacts...")
@@ -370,6 +398,11 @@ sklearn Pipeline:
     print(f"  Artifact hash  : {artifact_hash[:12]}...")
     print(f"  MLflow run ID  : {run_id}")
     print("=" * 55)
+
+# Save reference statistics for drift detection
+
+
+
 
 
 if __name__ == "__main__":

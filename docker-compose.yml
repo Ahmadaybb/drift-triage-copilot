@@ -1,0 +1,12 @@
+# docker-compose.yml
+# OWNER: Both
+# STATUS: 🔲 TODO
+#
+# Services:
+#   model_service  — FastAPI           (port 8000)
+#   agent_service  — LangGraph agent   (port 8001)
+#   worker         — Redis worker      (no port)
+#   dashboard      — Streamlit         (port 8501)
+#   mlflow         — MLflow UI         (port 5000)
+#   postgres       — Agent checkpoints (port 5432)
+#   redis          — Job queue         (port 6379)

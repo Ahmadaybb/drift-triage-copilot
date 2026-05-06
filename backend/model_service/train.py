@@ -195,6 +195,8 @@ def main():
 
     print("\n      --- Operating threshold on test set ---")
     final_m = evaluate("test", pipeline, X_test, y_test, threshold=OPERATING_THRESHOLD)# Save reference statistics for drift detection
+    # Create artifacts dir early — needed before step 7
+    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
     reference_stats = {
@@ -362,6 +364,7 @@ sklearn Pipeline:
 
         mlflow.log_artifact(str(schema_path))
         mlflow.log_artifact(str(card_path))
+        mlflow.log_artifact(str(ref_path)) 
 
         mlflow.sklearn.log_model(
             sk_model=pipeline,

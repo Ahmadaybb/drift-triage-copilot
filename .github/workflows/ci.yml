@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1) Checkout code ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2) Set up Python ──────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3) Install uv ─────────────────────────────────────────────────────────
+      - name: Install uv
+        run: pip install uv
+
+      # ── 4) Install dependencies ───────────────────────────────────────────────
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --extra dev
+
+      # ── 5) Download dataset ───────────────────────────────────────────────────
+      - name: Download dataset
+        working-directory: backend
+        run: |
+          mkdir -p data
+          curl -L "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip" \
+            -o bank-additional.zip
+          unzip -o bank-additional.zip
+          cp bank-additional/bank-additional-full.csv data/
+          rm -rf bank-additional.zip bank-additional/
+
+      # ── 6) Train model ────────────────────────────────────────────────────────
+      - name: Train and register model
+        working-directory: backend
+        run: uv run python model_service/train.py
+
+      # ── 7) Run fidelity tests ─────────────────────────────────────────────────
+      - name: Run model fidelity tests
+        working-directory: backend
+        run: uv run pytest tests/test_model_fidelity.py -v --tb=short
+
+      # ── 8) Run agent trajectory tests (Person 2) ──────────────────────────────
+      - name: Run agent trajectory tests
+        working-directory: backend
+        run: uv run pytest tests/test_agent_trajectories.py -v --tb=short

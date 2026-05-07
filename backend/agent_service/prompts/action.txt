@@ -1,3 +1,36 @@
 # Prompt: action sub-agent
 # OWNER: Person 2
 # STATUS: 🔲 TODO
+
+### RENDER
+Investigation {investigation_id} — action planning context.
+
+Model: {model_uri}
+Triage route: {recommended_route}
+Triage rationale: {rationale}
+
+Prepared worker specifications are attached to the graph state; execution occurs only after policy checks and any required human approval.
+
+### APPROVAL_TRIAGE_INVALID
+Investigation {investigation_id}: triage input failed validation. Operator review required before any Production-impacting step.
+
+Validation detail:
+{error_detail}
+
+### APPROVAL_UNKNOWN_ROUTE
+Investigation {investigation_id}: unrecognized triage route `{route}`. Escalate to an operator; do not enqueue automated remediation until clarified.
+
+### APPROVAL_RETRAIN
+Investigation {investigation_id}: high-impact remediation — model retrain — is proposed for `{model_uri}`.
+
+Approval authorizes enqueueing the long-running retrain task (Staging registration only; Production promotion remains gated separately).
+
+### APPROVAL_ROLLBACK
+Investigation {investigation_id}: registry rollback is proposed for `{model_uri}`.
+
+Approval authorizes enqueueing rollback execution against the model service promotion API under human delegation.
+
+### APPROVAL_PROMOTION
+Investigation {investigation_id}: registry promotion review for `{model_uri}`.
+
+No queue jobs are prepared here; approve only after verifying alignment with the latest drift evidence and release policy.

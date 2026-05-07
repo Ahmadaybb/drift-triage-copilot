@@ -1,3 +1,14 @@
 # Prompt: triage sub-agent
 # OWNER: Person 2
 # STATUS: 🔲 TODO
+
+### RENDER
+Investigation {investigation_id} — drift triage record.
+
+Model: {model_uri}
+Reported severity (platform): {severity_level}
+Severity rationale: {severity_reason}
+
+Deterministic routing decision for downstream automation: {recommended_route}.
+
+This block is an audit trail only; routing follows fixed rules from the drift contract.

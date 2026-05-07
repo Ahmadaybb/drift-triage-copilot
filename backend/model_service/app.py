@@ -29,10 +29,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from drift import compute_drift_report
-from predictor import predictor
-from registry_gate import run_promotion_gate
-from schemas import (
+from model_service.drift import compute_drift_report
+from model_service.predictor import predictor
+from model_service.registry_gate import run_promotion_gate
+from model_service.schemas import (
     DriftAlert,
     ErrorDetail,
     ErrorResponse,

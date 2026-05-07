@@ -17,6 +17,7 @@ class TriageDecision(BaseModel):
     )
     recommended_route: Literal[
         "monitor",
+        "replay",
         "replay_test",
         "retrain",
         "rollback",

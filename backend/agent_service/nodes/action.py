@@ -129,6 +129,7 @@ def action_node(state: InvestigationState) -> dict[str, Any]:
         return out
 
     task_map = {
+        "replay":      "replay",
         "replay_test": "replay",
         "retrain": "retrain",
         "rollback": "rollback",

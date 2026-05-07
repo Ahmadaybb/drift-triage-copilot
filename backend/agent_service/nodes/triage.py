@@ -20,7 +20,7 @@ _AGENT_ROOT = Path(__file__).resolve().parents[1]
 _TRIAGE_PROMPT_PATH = _AGENT_ROOT / "prompts" / "triage.txt"
 
 _Severity = Literal["none", "warning", "high"]
-_ROUTE = Literal["monitor", "replay_test", "retrain", "rollback", "request_promotion_review"]
+_ROUTE = Literal["monitor", "replay", "retrain", "rollback", "request_promotion_review"]
 
 
 def _safe_format(template: str, **kwargs: str) -> str:
@@ -38,7 +38,7 @@ def triage_node(state: InvestigationState) -> dict[str, Any]:
 
     route_by_severity: dict[_Severity, _ROUTE] = {
         "none": "monitor",
-        "warning": "replay_test",
+        "warning": "replay",
         "high": "retrain",
     }
 
@@ -49,7 +49,7 @@ def triage_node(state: InvestigationState) -> dict[str, Any]:
             "Severity none — monitor without dispatching slow tools."
             if severity_level == "none"
             else (
-                "Severity warning — run replay_test before heavier remediation."
+                "Severity warning — run replay before heavier remediation."
                 if severity_level == "warning"
                 else "Severity high — queue retrain path."
             )

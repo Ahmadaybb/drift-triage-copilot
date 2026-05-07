@@ -17,5 +17,7 @@ Investigation {investigation_id}: investigation state is open — route={route_t
 ### SUMMARY_INVALID_ACTION
 Investigation {investigation_id}: communications step received an invalid action payload and cannot summarize queued work reliably.
 
+
+
 Detail:
 {error_detail}

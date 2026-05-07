@@ -1,52 +1,30 @@
-# docker-compose.yml
-# OWNER: Both
-# STATUS: 🔲 TODO
-#
-# Services:
-#   model_service  — FastAPI           (port 8000)
-#   agent_service  — LangGraph agent   (port 8001)
-#   worker         — Redis worker      (no port)
-#   dashboard      — Streamlit         (port 8501)
-#   mlflow         — MLflow UI         (port 5000)
-#   postgres       — Agent checkpoints (port 5432)
-#   redis          — Job queue         (port 6379)
-version: "3.9"
-
-# ── Networks ───────────────────────────────────────────────────────────────────
-# All services communicate on one internal network.
-# Services reference each other by name (e.g. http://model_service:8000)
 networks:
   triage_net:
     driver: bridge
 
-# ── Volumes ────────────────────────────────────────────────────────────────────
-# Named volumes persist data across container restarts.
 volumes:
-  postgres_data:    # agent checkpoints
-  redis_data:       # job queue
-  mlflow_data:      # MLflow registry
+  postgres_data:
+  redis_data:
+  mlflow_data:
 
-# ── Services ───────────────────────────────────────────────────────────────────
 services:
 
-  # ── Postgres — agent checkpoints ────────────────────────────────────────────
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - triage_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # ── Redis — job queue ────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     volumes:
@@ -59,29 +37,21 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── MLflow UI ────────────────────────────────────────────────────────────────
   mlflow:
-    image: python:3.11-slim
+    image: ghcr.io/mlflow/mlflow:v2.12.1
     command: >
-      bash -c "pip install mlflow --quiet &&
-               mlflow server
-               --backend-store-uri sqlite:///mlflow_registry/mlflow.db
-               --artifact-root /mlflow_registry/artifacts
-               --host 0.0.0.0
-               --port 5000"
+      mlflow server
+      --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root file:///mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
     volumes:
-      - ./backend/mlflow_registry:/mlflow_registry
+      - ./backend/mlflow_registry:/mlflow
     ports:
-      - "5000:5000"
+      - "5001:5000"
     networks:
       - triage_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # ── Model Service — FastAPI ──────────────────────────────────────────────────
   model_service:
     build:
       context: ./backend
@@ -90,23 +60,24 @@ services:
       - "8000:8000"
     environment:
       AGENT_SERVICE_URL: ${AGENT_SERVICE_URL}
-      MLFLOW_TRACKING_URI: sqlite:///mlflow_registry/mlflow.db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
-      # Data that changes at runtime — use volumes not COPY
       - ./backend/mlflow_registry:/app/mlflow_registry
       - ./backend/artifacts:/app/artifacts
     networks:
       - triage_net
     depends_on:
-      mlflow:
-        condition: service_healthy
+      - mlflow
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ── Agent Service — LangGraph ────────────────────────────────────────────────
   agent_service:
     build:
       context: ./backend
@@ -114,15 +85,16 @@ services:
     ports:
       - "8001:8001"
     environment:
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY}
-      POSTGRES_USER:      ${POSTGRES_USER}
-      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
-      POSTGRES_DB:        ${POSTGRES_DB}
-      POSTGRES_HOST:      postgres
-      POSTGRES_PORT:      5432
-      MODEL_SERVICE_URL:  ${MODEL_SERVICE_URL}
-      REDIS_HOST:         redis
-      REDIS_PORT:         6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      MODEL_SERVICE_URL: ${MODEL_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     networks:
       - triage_net
     depends_on:
@@ -133,21 +105,21 @@ services:
       model_service:
         condition: service_healthy
 
-  # ── Worker — Redis queue worker ──────────────────────────────────────────────
   worker:
     build:
       context: ./backend
       dockerfile: worker/Dockerfile
     environment:
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY}
-      POSTGRES_USER:      ${POSTGRES_USER}
-      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
-      POSTGRES_DB:        ${POSTGRES_DB}
-      POSTGRES_HOST:      postgres
-      POSTGRES_PORT:      5432
-      MODEL_SERVICE_URL:  ${MODEL_SERVICE_URL}
-      REDIS_HOST:         redis
-      REDIS_PORT:         6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      MODEL_SERVICE_URL: ${MODEL_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ./backend/mlflow_registry:/app/mlflow_registry
       - ./backend/artifacts:/app/artifacts
@@ -160,7 +132,6 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Dashboard — Streamlit ────────────────────────────────────────────────────
   dashboard:
     build:
       context: ./frontend
@@ -170,6 +141,12 @@ services:
     environment:
       MODEL_SERVICE_URL: ${MODEL_SERVICE_URL}
       AGENT_SERVICE_URL: ${AGENT_SERVICE_URL}
+      MLFLOW_URL: http://mlflow:5000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DASHBOARD_REFRESH_SECONDS: "6"
     networks:
       - triage_net
     depends_on:

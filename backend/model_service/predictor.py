@@ -21,8 +21,7 @@ import mlflow.sklearn
 import numpy as np
 import pandas as pd
 
-from schemas import PredictionRequest, PredictionResponse
-
+from model_service.schemas import PredictionRequest, PredictionResponse
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────────────────

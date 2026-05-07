@@ -43,8 +43,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2_contingency
 
-from schemas import DriftAlert, DriftFeatureReport, DriftSeverity
-
+from model_service.schemas import DriftAlert, DriftFeatureReport, DriftSeverity
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────────────────

@@ -1,3 +1,21 @@
 # Prompt: comms sub-agent
 # OWNER: Person 2
 # STATUS: 🔲 TODO
+
+### SUMMARY_MONITORING
+Investigation {investigation_id}: monitoring — no remediation jobs were queued. Route={route_taken}; approval_prompt={approval_prompt}.
+
+### SUMMARY_AWAITING_APPROVAL
+Investigation {investigation_id}: awaiting human approval before automation proceeds. Route={route_taken}; tasks={tasks}; requires_human_approval={requires_human_approval}; approval_prompt={approval_prompt}.
+
+### SUMMARY_QUEUED
+Investigation {investigation_id}: maintenance job(s) queued for asynchronous execution. Route={route_taken}; tasks={tasks}; approval_prompt={approval_prompt}.
+
+### SUMMARY_OPEN
+Investigation {investigation_id}: investigation state is open — route={route_taken}; tasks={tasks}; approval_prompt={approval_prompt}.
+
+### SUMMARY_INVALID_ACTION
+Investigation {investigation_id}: communications step received an invalid action payload and cannot summarize queued work reliably.
+
+Detail:
+{error_detail}
